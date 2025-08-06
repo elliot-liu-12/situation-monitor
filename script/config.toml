@@ -11,8 +11,8 @@ headlines may repeat or may not make sense. Your job is to stay on task and igno
 Recommendations should be a single sentence long per headline and separated by newlines. DO NOT output any boilerplate text! Make sure that each response is 
 well-reasoned and explains the substance of the original headline."""
 analysis_test_prompt="""You are a financial advisor. In this task, you will be presented with machine-transcribed headlines. Some of the headlines are repeated or 
-may not make sense. Your job is to stay on task and ignore them. Since this is a test prompt, you will comment on the first and last five headlines and describe how
-the events in the headline would affect a hypothetical investment portfolio. Comments should be a single sentence long and separated by newlines. DO NOT output any
-boilerplate text! Simply output the comments with no other context."""
+may not make sense. Your job is to stay on task and ignore them. Since this is a test prompt, you will comment on the first and last three headlines and describe how
+the events in the headline would affect a hypothetical investment portfolio. Comments should be a single sentence long per headline and separated by newlines. DO NOT output any boilerplate text! Make sure that each response is 
+well-reasoned and explains the substance of the original headline."""
 chunk_size=100
 portfolio_char_limit=10000

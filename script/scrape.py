@@ -11,12 +11,12 @@ import json
 import os
 import io
 import ollama
-from ollama import Client
 import aiofiles
 import uuid
 from log import log_error
 import tomllib
 import sys
+from filelock import Timeout, FileLock
 
 async def extract_with_generated_pattern():
     cache_dir = Path("./pattern_cache")
@@ -153,18 +153,21 @@ def extract_headlines():
         os.remove("headlines.txt")
     except:
         pass
-    client= Client(
-
-    )
     with os.scandir("./screenshots") as d:
         for s in d:
             if s.is_file and (s.name[-4:] == ".png" or s.name[-4:] == ".jpg" or s.name[-5:] == ".jpeg"):
                 try:
-                    print(s.name)
                     resp = ollama.generate(
                         model=image_model, prompt=transcription_prompt, images=[s.path], stream=False, options={"context": 8192})
-                    with open("headlines.txt", "a") as f:
-                        f.write(resp["response"])
+                    lock = FileLock("headlines.txt.lock", timeout=10, thread_local=False)
+                    try:
+                        with lock.acquire():
+                            with open("headlines.txt", "a") as f:
+                                f.write(resp["response"])
+                    except:
+                        log_error(f"Lock for headlines.txt could not be acquired")
+                    finally:
+                        lock.release()
                         
                 except Exception as e:
                     log_error(f"Error reading file {s.path}: {str(e)}\n")

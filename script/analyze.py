@@ -5,21 +5,29 @@ import sys
 import ollama
 from uuid import uuid4
 import argparse
+from filelock import FileLock
 
 def read_headlines():
+    lock = FileLock("headlines.txt.lock", timeout=10, thread_local=False)
     try:
-        with open("headlines.txt", "r") as f:
-            headlines = []
-            for line in f:
-                cleaned = line.strip()
-                headlines.append(cleaned)
-                if (len(headlines) == chunk_size):
+        with lock:
+            try:
+                with open("headlines.txt", "r") as f:
+                    headlines = []
+                    for line in f:
+                        cleaned = line.strip()
+                        headlines.append(cleaned)
+                        if (len(headlines) == chunk_size):
+                            analyze_chunk(headlines)
+                            headlines.clear()
+                if(len(headlines) > 0):
                     analyze_chunk(headlines)
-                    headlines.clear()
-        if(len(headlines) > 0):
-            analyze_chunk(headlines)
-    except Exception as e:
-        log_error(f"Failed to open headlines {str(e)}")
+            except Exception as e:
+                log_error(f"Failed to open headlines {str(e)}")
+    except:
+        log_error("File lock couldn't be acquired")
+    finally:
+        lock.release()
 
 def analyze_chunk(chunk):
     try: os.remove("analysis.txt")
@@ -29,9 +37,15 @@ def analyze_chunk(chunk):
         if test_mode:
             resp = ollama.generate(model=analysis_model, prompt=analysis_test_prompt+"\n"+text)
         else:
-            resp = ollama.generate(model=analysis_model, prompt=analysis_prompt+"\n"+ portfolio +"\n"+text)
-        with open(f"analysis.txt", "a", encoding="utf-8") as f:
-            f.write(resp["response"])
+            resp = ollama.generate(model=analysis_model, prompt=analysis_prompt+"\n"+ portfolio +"\n"+ text)
+        lock = FileLock("analysis.txt.lock", timeout=10, thread_local=False)
+        try:
+            with lock:
+                with open(f"analysis.txt", "a", encoding="utf-8") as f:
+                    f.write(resp["response"])
+        except: 
+            log_error("Couldn't acquire lock for analysis.txt")
+        finally: lock.release()
     except Exception as e:
         log_error(f"Error analyzing chunk{str(e)}")
 
