@@ -1,7 +1,7 @@
 viewport_width=1080
 viewport_height=1900
 image_model="qwen2.5vl:3b"
-urls=["https://cnn.com", "https://apnews.com", "https://axios.com"]
+urls=["https://nbcnews.com", "https://news.ycombinator.com/news", "https://bloomberg.com"]
 transcription_prompt="Transcribe all of the headlines in this image. A headline is a single sentence that describes a news event. Separate different headlines with a newline character. If the image appears blurry or not news-related, return nothing."
 message_threshold=""
 analysis_model="hf.co/unsloth/gemma-3-12b-it-GGUF:Q4_K_M"
@@ -12,7 +12,7 @@ Recommendations should be a single sentence long per headline and separated by n
 well-reasoned and explains the substance of the original headline."""
 analysis_test_prompt="""You are a financial advisor. In this task, you will be presented with machine-transcribed headlines. Some of the headlines are repeated or 
 may not make sense. Your job is to stay on task and ignore them. Since this is a test prompt, you will comment on the first and last three headlines and describe how
-the events in the headline would affect a hypothetical investment portfolio. Comments should be a single sentence long per headline and separated by newlines. DO NOT output any boilerplate text! Make sure that each response is 
-well-reasoned and explains the substance of the original headline."""
+the events in the headline would affect a hypothetical investment portfolio. Comments should be a single sentence long per headline and separated by newlines. DO NOT
+output any boilerplate text! DO NOT repeat the original headline! Make sure that each response is well-reasoned and explains the substance of the original headline."""
 chunk_size=100
 portfolio_char_limit=10000

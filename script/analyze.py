@@ -8,6 +8,8 @@ import argparse
 from filelock import FileLock
 
 def read_headlines():
+    try: os.remove("analysis.txt")
+    except: pass
     lock = FileLock("headlines.txt.lock", timeout=10, thread_local=False)
     try:
         with lock:
@@ -30,14 +32,13 @@ def read_headlines():
         lock.release()
 
 def analyze_chunk(chunk):
-    try: os.remove("analysis.txt")
-    except: pass
     text = "\n".join(chunk)
     try:
         if test_mode:
             resp = ollama.generate(model=analysis_model, prompt=analysis_test_prompt+"\n"+text)
         else:
             resp = ollama.generate(model=analysis_model, prompt=analysis_prompt+"\n"+ portfolio +"\n"+ text)
+                
         lock = FileLock("analysis.txt.lock", timeout=10, thread_local=False)
         try:
             with lock:

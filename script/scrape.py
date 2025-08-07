@@ -121,7 +121,7 @@ async def take_screenshots(urls):
                         await f.write(png_bytes)
                         await f.flush()
                 except Exception as e:
-                    async with aiofiles.open("errors.log", "a") as f:
+                    async with aiofiles.open("errors.log", "a", encoding="utf-8") as f:
                         await f.write(f"Screenshot from {result.url} not saved: {str(e)}\n")
                         await f.flush()
 
