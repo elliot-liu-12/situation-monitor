@@ -148,7 +148,7 @@ function App() {
 
 return (
   <div className="flex flex-col items-center justify-center">
-    <h1 className="mb-4 font-bold text-4xl">Situation Monitor</h1>
+    <h1 className="mb-8 font-bold text-5xl">Situation Monitor</h1>
     {showSelector && <Selector tags={tickers} addTicker={addTicker} removeTicker={removeTicker} resetTickers={resetTickers} />}
     <Button onClick={handleSelectorToggle} variant="ghost" className="my-2">
       {showSelector ? "Hide Selector" : "Show Selector"}
@@ -197,7 +197,6 @@ return (
       </Dialog>
       
     </div>
-    
   </div>
 );
 }
