@@ -8,6 +8,7 @@ import { ResultTable } from '@/components/resulttable/resulttable'
 import { parseString } from '@/components/resulttable/parsestring'
 import { Row } from "@/components/resulttable/row"
 import { useScheduler } from '@/hooks/useScheduler'
+import { useStateStore } from '@/store/store'
 import './App.css'
 
 function App() {
@@ -17,29 +18,38 @@ function App() {
   const [tags, setTags] = useState<string[]>([]);
   const [tableRows, setTableRows] = useState<Row[]>([]);
 
+  const storeTickers = useStateStore((state) => state.tickers);
+  const updateTickers = useStateStore((state) => state.updateTickers);
+  const storeTestMode = useStateStore((state) => state.testMode);
+  const updateTestMode = useStateStore((state) => state.updateTestMode);
+  const storeSecondsRemaining = useStateStore((state) => state.secondsRemaining);
+
+  //use refs to pass current state to hooks - must remember to update refs along with state or hook will break!
+  const tagsRef = useRef<string[]>(tags);
+  const testModeRef = useRef<boolean>(testMode);
+
+  useEffect(() => {
+    tagsRef.current = tags;
+  }, [tags]);
+
+  useEffect(() => {
+    testModeRef.current = testMode;
+  }, [testMode]);
+
   const {
+        startMonitoring,
         scanState,
-        getScanInterval,
+        secondsRemaining,
         manualScanRequest,
         manualScrapeRequest,
         manualAnalyzeRequest,
         manualReadRequest,
-        setScanInterval,
-        fullScan,
-  } = useScheduler();
-  //retrieve saved data on startup
+        readRequest,
+  } = useScheduler(tagsRef, testModeRef);
 
+  //retrieve saved data on startup
   useEffect(() => {
     async function fetchSavedData () {
-    const configResp = await window.ipcRenderer.invoke("loadConfig");
-    if(!configResp.success) {
-      console.error("Could not retrieve config file");
-    } 
-    else {
-      const configData: AppConfig = configResp.data;
-      console.log(configData);
-    }
-
     const tickersResp = await window.ipcRenderer.invoke("fetchData", "tickers.csv");
     console.log("Data fetched: ", tickersResp.data);
     if(!tickersResp.success)
@@ -77,12 +87,12 @@ function App() {
   }
 
   const handleManualScanRequest = async () => {
-    const resp = await manualScanRequest(testMode, tags);
+    const resp = await manualScanRequest();
     if(!resp.success) {
       console.error("Failed to manually start scan");
     }
     else {
-      const parseResp = parseString(resp.data, resp.timestamp);
+      const parseResp = await parseString(resp.data, resp.timestamp);
       if(!parseResp.success) {
         console.error("Failed to parse analysis output");
       }
@@ -112,13 +122,13 @@ function App() {
   }, [scanState])
 
   const handleTestModeToggle = () => {
-        setTestMode(!testMode);
+        updateTestMode(!storeTestMode);
   }
 
 return (
   <div className="flex flex-col items-center justify-center">
     <h1 className="mb-4 font-bold text-4xl">Situation Monitor</h1>
-    {showSelector && <Selector tags={tags} setTags={setTags} />}
+    {showSelector && <Selector tags={storeTickers} setTags={setTags} />}
     <Button onClick={handleSelectorToggle} className="my-2">
       {showSelector ? "Hide Selector" : "Show Selector"}
     </Button>
@@ -132,6 +142,7 @@ return (
     <div className="container max-w-4xl mx-auto py-10">
       <ResultTable data={tableRows}/>
     </div>
+    <div>Seconds remaining: {storeSecondsRemaining}</div>
   </div>
 );
 }

@@ -1,5 +1,5 @@
 import { Row } from "./row";
-export const parseString = (input: string[], timestamp?: Date): { success: boolean; data: Row[] } => {
+export const parseString = async (input: string[], timestamp?: Date): Promise<{ success: boolean; data: Row[] }> => {
     try {
         const rows: Row[] = input.map((line) => {
                 const trimmedLine = line.trim();

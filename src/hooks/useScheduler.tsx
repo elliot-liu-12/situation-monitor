@@ -1,21 +1,56 @@
-import { useState, useEffect } from 'react';
-
+import { useState, useEffect, useRef } from 'react';
+import { AppConfig } from 'types/config'
+import { useStateStore } from '@/store/store'
 
 // this hook centralizes the scan state so that other components know that a scan is ongoing and can dispatch events and get the time between scans
-export const useScheduler = () => {
+export const useScheduler = (tagsRef: React.MutableRefObject<string[]>, testModeRef: React.MutableRefObject<boolean>) => {
     const [ scanState, setScanState ] = useState<"idle" | "scraping" | "analysis" | "reading">("idle");
-    const [ scanInterval, setScanInterval ] = useState<number>(300);
-    const [ secondsRemaining, setSecondsRemaining ] = useState<number>(300);
+    const interval = useRef<NodeJS.Timeout | null>(null);
 
+    // fetch default value from config file
     useEffect(() => {
+        async function fetchSavedData() {
+            const configResp = await window.ipcRenderer.invoke("loadConfig");
+            const store = useStateStore.getState();
+            const updateScanInterval = store.updateScanInterval;
 
-    },[scanInterval])
+            if(configResp.success) {
+                updateScanInterval(configResp.data.scanInterval);
+            } else
+            {
+                console.error("Failed to read saved scan interval, setting to sensible default");
+                updateScanInterval(300);
+            }
+        }
+        fetchSavedData();
+    }, []);
 
-    const getScanInterval = (): number => {
-        return scanInterval;
-    }
+    //start timer
+    useEffect(() => {
+        if(interval.current == null) {
+            interval.current = setInterval(() => {
+                const store = useStateStore.getState();
+                const isActive = store.monitorActive;
+                if(isActive) {
+                    const currTime = store.secondsRemaining - 1;
+                    store.updateSecondsRemaining(currTime);
+                    if (currTime <= 0) {
+                        const scanInterval = store.scanInterval;
+                        store.updateSecondsRemaining(scanInterval);
+                    }
+                }
+            }, 1000);
+        }
+        
+    return () => {
+        if (interval.current) {
+            clearInterval(interval.current);
+            interval.current = null;
+        }
+    };
+    }, []);
 
-    const fullScan = async (testMode: boolean, tags: string[]): Promise<{success: boolean, state: string, data: string[], timestamp: Date}> => {
+    const fullScan = async (): Promise<{success: boolean, state: string, data: string[], timestamp: Date}> => {
     console.time("full-scan");
     setScanState("scraping");
     const scrapeResp = await scrapeRequest();
@@ -24,7 +59,7 @@ export const useScheduler = () => {
     }
 
     setScanState("analysis");
-    const analysisResp = await analyzeRequest(testMode, tags);
+    const analysisResp = await analyzeRequest(testModeRef.current, tagsRef.current);
     if(!analysisResp.success) {
       return {success: false, state: scanState, data: [], timestamp: new Date(0)};
     }
@@ -41,9 +76,13 @@ export const useScheduler = () => {
     return {success: true, state: scanState, data: readResp.data, timestamp: readResp.timestamp};
     }
     
-    const manualScanRequest = async (testMode: boolean, tags: string[]): Promise<{success: boolean, data: string[], timestamp: Date}> => {
+    const manualScanRequest = async (): Promise<{success: boolean, data: string[], timestamp: Date}> => {
         if(scanState == "idle") {
-            const resp = await fullScan(testMode, tags);
+
+            console.log(testModeRef);
+            console.log(tagsRef);
+
+            const resp = await fullScan();
             return {success: resp.success, data: resp.data, timestamp: resp.timestamp};
         }
         else {
@@ -80,7 +119,6 @@ export const useScheduler = () => {
         }
     }
 
-
     //individual steps for debugging
     const manualScrapeRequest = async () => {
         if(scanState == "idle") {
@@ -105,13 +143,10 @@ export const useScheduler = () => {
 
     return {
         scanState,
-        getScanInterval,
         manualScanRequest,
         manualScrapeRequest,
         manualAnalyzeRequest,
         manualReadRequest,
         readRequest,
-        setScanInterval,
-        fullScan,
     }
 }
