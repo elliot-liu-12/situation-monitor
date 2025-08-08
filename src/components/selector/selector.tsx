@@ -26,7 +26,7 @@ export const Selector = ({
 }: SelectorProps) => {
   const [inputValue, setInputValue] = useState("")
   const [error, setError] = useState("")
-  const [loading, setIsLoading] = useState(false);
+  //const [loading, setIsLoading] = useState(false);
 
   const validateInput = (value: string): string => {
     if (value.length < minCharacters) {
@@ -83,7 +83,7 @@ export const Selector = ({
     !tags.includes(inputValue.trim().toUpperCase())
 
   const onSaveButtonClicked = async () => {
-      setIsLoading(true);
+      //setIsLoading(true);
        const resp = await window.ipcRenderer.invoke("saveFile", "tickers.csv", tags.toString())
        if(resp.success == false)
         console.log("Save failed")
@@ -91,7 +91,7 @@ export const Selector = ({
       {
         console.log("Save succeeded.")
       }
-      setIsLoading(false);
+      //setIsLoading(false);
   }
 
   return (

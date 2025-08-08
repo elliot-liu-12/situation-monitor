@@ -1,5 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
-import { AppConfig } from 'types/config'
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Selector } from './components/selector/selector'
 import { Label } from "@/components/ui/label"
@@ -17,12 +16,7 @@ function App() {
   const [scanButtonText, setScanButtonText] = useState("Run Scan");
   const [tableRows, setTableRows] = useState<Row[]>([]);
 
-  const storeTickers = useStateStore((state) => state.tickers);
-  const updateTickers = useStateStore((state) => state.updateTickers);
-  const storeTestMode = useStateStore((state) => state.testMode);
-  const updateTestMode = useStateStore((state) => state.updateTestMode);
-  const storeSecondsRemaining = useStateStore((state) => state.secondsRemaining);
-  const { addTicker, removeTicker, resetTickers, lastAnalysis, toggleMonitorActive } = useStateStore(); 
+  const { tickers, updateTickers, testMode, updateTestMode, secondsRemaining, addTicker, removeTicker, resetTickers, lastAnalysis, toggleMonitorActive } = useStateStore(); 
 
   const {
         scanState,
@@ -118,7 +112,7 @@ function App() {
   }, [scanState])
 
   const handleTestModeToggle = () => {
-        updateTestMode(!storeTestMode);
+        updateTestMode(!testMode);
   }
 
   const handleMonitorToggle = () => {
@@ -145,13 +139,13 @@ function App() {
 return (
   <div className="flex flex-col items-center justify-center">
     <h1 className="mb-4 font-bold text-4xl">Situation Monitor</h1>
-    {showSelector && <Selector tags={storeTickers} addTicker={addTicker} removeTicker={removeTicker} resetTickers={resetTickers} />}
+    {showSelector && <Selector tags={tickers} addTicker={addTicker} removeTicker={removeTicker} resetTickers={resetTickers} />}
     <Button onClick={handleSelectorToggle} variant="ghost" className="my-2">
       {showSelector ? "Hide Selector" : "Show Selector"}
     </Button>
     
     <Button size="lg" className="w-38" onClick={handleManualScanRequest}> {scanButtonText} </Button>
-    <div className="my-2">Seconds remaining: {storeSecondsRemaining}</div>
+    <div className="my-2">Seconds remaining: {secondsRemaining}</div>
 
     <div className="flex items-center space-x-2 my-1.5">
       <Label htmlFor="testmode">Monitor Automatically</Label>

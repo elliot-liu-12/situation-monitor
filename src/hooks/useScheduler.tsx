@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { AppConfig } from 'types/config'
 import { useStateStore } from '@/store/store'
 
 // this hook centralizes the scan state so that other components know that a scan is ongoing and can dispatch events and get the time between scans
