@@ -3,6 +3,16 @@ import { Button } from "@/components/ui/button"
 import { Selector } from './components/selector/selector'
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { ResultTable } from '@/components/resulttable/resulttable'
 import { parseString } from '@/components/resulttable/parseStringArray'
 import { parseJSON } from '@/components/resulttable/parseJSON'
@@ -160,7 +170,32 @@ return (
     <div className="container max-w-4xl mx-auto py-10">
       <ResultTable data={tableRows}/>
       <Button variant="ghost" onClick={handleSaveTable}>Save Table</Button>
-      <Button variant="ghost" onClick={handleClearData}>Clear Saved Data</Button>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button variant="ghost">Clear Saved Data</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clear current table?</DialogTitle>
+            <DialogDescription>This will clear the table that you see in the app now in addition to deleting saved data.</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose>
+              <Button variant="ghost" className="">Cancel</Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button onClick={handleClearData}> No </Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button variant="destructive" onClick={() => {
+                handleClearData();
+                setTableRows([]);
+              }}> Yes </Button>
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
     </div>
     
   </div>
