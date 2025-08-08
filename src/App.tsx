@@ -13,9 +13,7 @@ import './App.css'
 
 function App() {
   const [showSelector, setShowSelector] = useState(true);
-  const [testMode, setTestMode] = useState(false);
   const [scanButtonText, setScanButtonText] = useState("Run Scan");
-  const [tags, setTags] = useState<string[]>([]);
   const [tableRows, setTableRows] = useState<Row[]>([]);
 
   const storeTickers = useStateStore((state) => state.tickers);
@@ -23,29 +21,12 @@ function App() {
   const storeTestMode = useStateStore((state) => state.testMode);
   const updateTestMode = useStateStore((state) => state.updateTestMode);
   const storeSecondsRemaining = useStateStore((state) => state.secondsRemaining);
-
-  //use refs to pass current state to hooks - must remember to update refs along with state or hook will break!
-  const tagsRef = useRef<string[]>(tags);
-  const testModeRef = useRef<boolean>(testMode);
-
-  useEffect(() => {
-    tagsRef.current = tags;
-  }, [tags]);
-
-  useEffect(() => {
-    testModeRef.current = testMode;
-  }, [testMode]);
+  const { addTicker, removeTicker, resetTickers, lastCompleted, lastAnalysis } = useStateStore(); 
 
   const {
-        startMonitoring,
         scanState,
-        secondsRemaining,
         manualScanRequest,
-        manualScrapeRequest,
-        manualAnalyzeRequest,
-        manualReadRequest,
-        readRequest,
-  } = useScheduler(tagsRef, testModeRef);
+  } = useScheduler();
 
   //retrieve saved data on startup
   useEffect(() => {
@@ -61,7 +42,7 @@ function App() {
           const validTickers: string[] = tickers.filter((ticker: string) => {
             return (ticker.length > 2)
           })
-          setTags(validTickers);
+          updateTickers(validTickers);
       }
       catch {
         console.error("Failed to split tickers.");
@@ -80,7 +61,20 @@ function App() {
     setTableRows(parseResp.data);
     }
     fetchSavedData();
-  }, []);
+  }, [updateTickers]);
+
+  //update table when scan is complete
+  useEffect(() => {
+    async function parseUpdate() {
+      const parseResp = await parseString(lastAnalysis, lastCompleted);
+      if(!parseResp.success) {
+        console.error("Parsing data failed");
+        return;
+      } 
+      setTableRows(parseResp.data);  
+    }
+    parseUpdate();
+  }, [lastCompleted]);
 
   const handleSelectorToggle = () => {
     setShowSelector(!showSelector);
@@ -128,7 +122,7 @@ function App() {
 return (
   <div className="flex flex-col items-center justify-center">
     <h1 className="mb-4 font-bold text-4xl">Situation Monitor</h1>
-    {showSelector && <Selector tags={storeTickers} setTags={setTags} />}
+    {showSelector && <Selector tags={storeTickers} addTicker={addTicker} removeTicker={removeTicker} resetTickers={resetTickers} />}
     <Button onClick={handleSelectorToggle} className="my-2">
       {showSelector ? "Hide Selector" : "Show Selector"}
     </Button>

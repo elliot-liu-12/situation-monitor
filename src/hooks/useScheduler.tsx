@@ -1,12 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { AppConfig } from 'types/config'
 import { useStateStore } from '@/store/store'
 
 // this hook centralizes the scan state so that other components know that a scan is ongoing and can dispatch events and get the time between scans
-export const useScheduler = (tagsRef: React.MutableRefObject<string[]>, testModeRef: React.MutableRefObject<boolean>) => {
+export const useScheduler = () => {
     const [ scanState, setScanState ] = useState<"idle" | "scraping" | "analysis" | "reading">("idle");
     const interval = useRef<NodeJS.Timeout | null>(null);
-
+    const { testMode, tickers, updateLastCompleted, updateLastAnalysis } = useStateStore();
     // fetch default value from config file
     useEffect(() => {
         async function fetchSavedData() {
@@ -25,6 +25,38 @@ export const useScheduler = (tagsRef: React.MutableRefObject<string[]>, testMode
         fetchSavedData();
     }, []);
 
+    const fullScanCallback = useCallback(async () => {
+        if(scanState != "idle") {
+            console.error("Attempted to interrupt ongoing scan");
+            return;
+        }
+        console.time("full-scan");
+        setScanState("scraping");
+        const scrapeResp = await scrapeRequest();
+        if(!scrapeResp.success) {
+        return {success: false, state: scanState, data: [], timestamp: new Date(0)};
+        }
+
+        setScanState("analysis");
+        const analysisResp = await analyzeRequest(testMode, tickers);
+        if(!analysisResp.success) {
+        return {success: false, state: scanState, data: [], timestamp: new Date(0)};
+        }
+
+        setScanState("reading");
+        const readResp = await readRequest();
+        if(!readResp.success) {
+            console.log("Reading data failed");
+            return {success: false, state: scanState, data: [], timestamp: new Date(0)};
+        }
+
+        setScanState("idle");
+        console.timeEnd("full-scan");
+        updateLastCompleted(readResp.timestamp);
+        updateLastAnalysis(readResp.data);
+        return {success: true, state: scanState, data: readResp.data, timestamp: readResp.timestamp};
+    }, [scanState, testMode, tickers, updateLastCompleted, updateLastAnalysis])
+ 
     //start timer
     useEffect(() => {
         if(interval.current == null) {
@@ -35,6 +67,7 @@ export const useScheduler = (tagsRef: React.MutableRefObject<string[]>, testMode
                     const currTime = store.secondsRemaining - 1;
                     store.updateSecondsRemaining(currTime);
                     if (currTime <= 0) {
+                        fullScanCallback();
                         const scanInterval = store.scanInterval;
                         store.updateSecondsRemaining(scanInterval);
                     }
@@ -48,7 +81,7 @@ export const useScheduler = (tagsRef: React.MutableRefObject<string[]>, testMode
             interval.current = null;
         }
     };
-    }, []);
+    }, [fullScanCallback]);
 
     const fullScan = async (): Promise<{success: boolean, state: string, data: string[], timestamp: Date}> => {
     console.time("full-scan");
@@ -59,7 +92,7 @@ export const useScheduler = (tagsRef: React.MutableRefObject<string[]>, testMode
     }
 
     setScanState("analysis");
-    const analysisResp = await analyzeRequest(testModeRef.current, tagsRef.current);
+    const analysisResp = await analyzeRequest(useStateStore.getState().testMode, useStateStore.getState().tickers);
     if(!analysisResp.success) {
       return {success: false, state: scanState, data: [], timestamp: new Date(0)};
     }
@@ -78,10 +111,6 @@ export const useScheduler = (tagsRef: React.MutableRefObject<string[]>, testMode
     
     const manualScanRequest = async (): Promise<{success: boolean, data: string[], timestamp: Date}> => {
         if(scanState == "idle") {
-
-            console.log(testModeRef);
-            console.log(tagsRef);
-
             const resp = await fullScan();
             return {success: resp.success, data: resp.data, timestamp: resp.timestamp};
         }
@@ -98,6 +127,7 @@ export const useScheduler = (tagsRef: React.MutableRefObject<string[]>, testMode
         }
         return {success: true};
     }
+
 
     const analyzeRequest = async (testMode: boolean, portfolio: string[]): Promise<{success: boolean}> => {
         const resp = await window.ipcRenderer.invoke("analyze", testMode, portfolio);

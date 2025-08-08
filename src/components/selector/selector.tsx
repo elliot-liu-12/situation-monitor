@@ -10,7 +10,9 @@ interface SelectorProps {
   maxSelections?: number
   minCharacters?: number
   tags: string[]
-  setTags: React.Dispatch<React.SetStateAction<string[]>>
+  addTicker: (ticker: string) => void,
+  removeTicker: (ticker: string) => void,
+  resetTickers: () => void,
 }
 
 export const Selector = ({
@@ -18,12 +20,13 @@ export const Selector = ({
   maxSelections = 50,
   minCharacters = 2,
   tags,
-  setTags,
+  addTicker,
+  removeTicker,
+  resetTickers
 }: SelectorProps) => {
   const [inputValue, setInputValue] = useState("")
   const [error, setError] = useState("")
   const [loading, setIsLoading] = useState(false);
-
 
   const validateInput = (value: string): string => {
     if (value.length < minCharacters) {
@@ -38,7 +41,7 @@ export const Selector = ({
     return ""
   }
 
-  const addTag = () => {
+  const handleAddTag = () => {
     const trimmedValue = inputValue.trim().toUpperCase()
     if (!trimmedValue) return
 
@@ -47,21 +50,19 @@ export const Selector = ({
       setError(validationError)
       return
     }
-
-    setTags((prev) => [...prev, trimmedValue])
-    setInputValue("")
-    setError("")
+    addTicker(trimmedValue);
+    setInputValue("");
+    setError("");
   }
 
   const removeTag = (tagToRemove: string) => {
-    setTags((prev) => prev.filter((tag) => tag !== tagToRemove))
-    setError("") // Clear error when removing tags
+    removeTicker(tagToRemove);
   }
 
   const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault()
-      addTag()
+      handleAddTag();
     }
   }
 
@@ -72,7 +73,7 @@ export const Selector = ({
   }
 
   const clearAll = () => {
-    setTags([])
+    resetTickers();
     setError("")
   }
 
@@ -113,7 +114,7 @@ export const Selector = ({
               maxLength={5}
             />
             <button
-              onClick={addTag}
+              onClick={handleAddTag}
               disabled={!canAddTag}
               className={`m-1 p-2 rounded-md transition-colors ${
                 canAddTag ? "bg-gray-100 text-gray-500 " : "bg-gray-100 text-gray-400 cursor-not-allowed"
