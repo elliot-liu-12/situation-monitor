@@ -6,7 +6,7 @@ import { useStateStore } from '@/store/store'
 export const useScheduler = () => {
     const [ scanState, setScanState ] = useState<"idle" | "scraping" | "analysis" | "reading">("idle");
     const interval = useRef<NodeJS.Timeout | null>(null);
-    const { testMode, tickers, updateLastCompleted, updateLastAnalysis } = useStateStore();
+    const { testMode, tickers, updateLastAnalysis } = useStateStore();
     // fetch default value from config file
     useEffect(() => {
         async function fetchSavedData() {
@@ -52,10 +52,9 @@ export const useScheduler = () => {
 
         setScanState("idle");
         console.timeEnd("full-scan");
-        updateLastCompleted(readResp.timestamp);
-        updateLastAnalysis(readResp.data);
+        updateLastAnalysis({data: readResp.data, timestamp: readResp.timestamp});
         return {success: true, state: scanState, data: readResp.data, timestamp: readResp.timestamp};
-    }, [scanState, testMode, tickers, updateLastCompleted, updateLastAnalysis])
+    }, [scanState, testMode, tickers, updateLastAnalysis])
  
     //start timer
     useEffect(() => {

@@ -4,4 +4,4 @@ export type Row = {
     model?: string,
     timestamp?: Date,
     site?: string
-} 
+}

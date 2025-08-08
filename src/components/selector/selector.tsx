@@ -164,16 +164,6 @@ export const Selector = ({
       <div>
         <Button onClick={onSaveButtonClicked} variant="default">Save Preferences</Button>
       </div>
-      {/* Instructions */}
-      <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-md">
-        <p className="font-medium mb-1">How to use:</p>
-        <ul className="space-y-1">
-          <li>• Type at least {minCharacters} characters</li>
-          <li>• Press Enter or click + to add</li>
-          <li>• Click × on tickers to remove them</li>
-          <li>• Maximum {maxSelections} tickers allowed</li>
-        </ul>
-      </div>
     </div>
   )
 }
